@@ -163,7 +163,8 @@ void saveConfig()
 
 void setDefaults()
 {
-  storage.version == CONFIG_VERSION;
+  storage.version = CONFIG_VERSION;
+  storage.frequency = 162550; //  6 digits only.
 }
 
 /*
