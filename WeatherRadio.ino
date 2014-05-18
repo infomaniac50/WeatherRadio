@@ -22,6 +22,7 @@
 #include <SPI.h>
 #include <SD.h>
 
+#define ERROR_PIN 13
 // EEPROM Globals
 #define CONFIG_VERSION "wr1"
 #define memoryBase 32
@@ -134,19 +135,20 @@ void loop()
 
 void loopError()
 {
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+  Serial.println(F("Error"));
+  pinMode(ERROR_PIN, OUTPUT);
+  digitalWrite(ERROR_PIN, LOW);
   // Blink forever
   while (true)
   {
     delay(1000);
-    digitalWrite(13, HIGH);
+    digitalWrite(ERROR_PIN, HIGH);
     delay(250);
-    digitalWrite(13, LOW);
+    digitalWrite(ERROR_PIN, LOW);
     delay(250);
-    digitalWrite(13, HIGH);
+    digitalWrite(ERROR_PIN, HIGH);
     delay(250);
-    digitalWrite(13, LOW);
+    digitalWrite(ERROR_PIN, LOW);
   }
 }
 
