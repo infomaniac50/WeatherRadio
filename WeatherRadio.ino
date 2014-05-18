@@ -53,7 +53,7 @@ void setup()
 
   // Setup EEPROM with defaults
 
-  EEPROM.setMemPool(memoryBase, EEPROMSizeUno);
+  EEPROM.setMemPool(memoryBase, EEPROMSizeMega);
   configAddress = EEPROM.getAddress(sizeof(StoreStruct));
 
   if (!loadConfig())
