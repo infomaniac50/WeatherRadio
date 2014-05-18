@@ -128,20 +128,14 @@ void getFunction()
     break;
 
   case 'd':
-    if (channel <= WB_MIN_FREQUENCY)
+    if (!tuneDown())
       break;
     Serial.println(F("Channel down."));
-    channel -= WB_CHANNEL_SPACING;
-    Radio.tune();
-    break;
 
   case 'u':
-    if (channel >= WB_MAX_FREQUENCY)
+    if (!tuneUp())
       break;
     Serial.println(F("Channel up."));
-    channel += WB_CHANNEL_SPACING;
-    Radio.tune();
-    break;
 
   case 's':
     Serial.println(F("Scanning....."));
@@ -149,21 +143,17 @@ void getFunction()
     break;
 
   case '-':
-    if (volume <= 0x0000)
+    if (!volumeDown())
       break;
-    volume--;
-    Radio.setVolume(volume);
     Serial.print(F("Volume: "));
     Serial.println(volume);
     break;
 
   case '+':
-    if (volume >= 0x003F)
+    if (!volumeUp())
       break;
-    volume++;
-    Radio.setVolume(volume);
     Serial.print(F("Volume: "));
-    Serial.println(volume, DEC);
+    Serial.println(volume);
     break;
 
   case 'm':
@@ -232,4 +222,46 @@ void printHex(byte value)
 //  The End.
 //
 
+bool tuneUp() {
+  if (channel >= WB_MAX_FREQUENCY)
+    return false;
 
+  channel += WB_CHANNEL_SPACING;
+  Radio.tune();
+  return true;
+}
+
+bool tuneDown() {
+  if (channel >= WB_MAX_FREQUENCY)
+    return false;
+
+    channel += WB_CHANNEL_SPACING;
+    Radio.tune();
+    return true;
+}
+
+bool volumeUp() {
+  return volumeUp(1);
+}
+
+bool volumeUp(int increment) {
+  if (volume >= 0x003F)
+    return false;
+  volume += increment;
+  constrain(volume, 0x0000, 0x003F);
+  Radio.setVolume(volume);
+  return true;
+}
+
+bool volumeDown() {
+  return volumeDown(1);
+}
+
+bool volumeDown(int increment) {
+  if (volume <= 0x0000)
+    return false;
+  volume -= increment;
+  constrain(volume, 0x0000, 0x003F);
+  Radio.setVolume(volume);
+  return true;
+}
