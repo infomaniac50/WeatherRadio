@@ -33,7 +33,7 @@ int configAddress = 0;
 struct StoreStruct
 {
   char version[4];
-  int frequency;
+  unsigned long frequency;
 } storage;
 
 
