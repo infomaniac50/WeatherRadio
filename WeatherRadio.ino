@@ -93,7 +93,7 @@ void setup()
   delay(1000);
   showMenu();
   delay(1000);
-  Radio.begin();
+  Radio.begin(8);
   Radio.patch();          //  Use this one to to include the 1050 Hz patch.
   //Radio.on();           //  Use this one if not using the patch.
   //Radio.getRevision();  //  Only captured on the logic analyzer - not displayed.
