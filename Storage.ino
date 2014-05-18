@@ -15,7 +15,7 @@ void applyConfig() {
 
 void saveConfig()
 {
-  EEPROM.writeBlock(configAddress, storage);
+  EEPROM.updateBlock(configAddress, storage);
 }
 
 void setDefaults()
