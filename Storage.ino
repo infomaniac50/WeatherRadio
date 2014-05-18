@@ -3,7 +3,7 @@
 bool loadConfig()
 {
   EEPROM.readBlock(configAddress, storage);
-  return (storage.version == CONFIG_VERSION);
+  return strcmp_P(storage.version, CONFIG_VERSION) == 0;
 }
 
 void saveConfig()
