@@ -55,6 +55,9 @@ void setup()
 
   if (!loadConfig())
   {
+    blink(13, 1500);
+    blink(13, 1500);
+    blink(13, 1500);
     setDefaults();
     saveConfig();
   }
@@ -142,13 +145,14 @@ void errorLoop()
   while (true)
   {
     delay(1000);
-    digitalWrite(ERROR_PIN, HIGH);
-    delay(250);
-    digitalWrite(ERROR_PIN, LOW);
-    delay(250);
-    digitalWrite(ERROR_PIN, HIGH);
-    delay(250);
-    digitalWrite(ERROR_PIN, LOW);
+    blink(ERROR_PIN, 250);
+    blink(ERROR_PIN, 250);
   }
 }
 
+void blink(int pin, int blinkDelay) {
+  digitalWrite(pin, HIGH);
+  delay(blinkDelay);
+  digitalWrite(pin, LOW);
+  delay(blinkDelay);
+}
