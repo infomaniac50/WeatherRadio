@@ -26,7 +26,7 @@
 // EEPROM Globals
 // #define CONFIG_VERSION "wr1"
 const char CONFIG_VERSION[4] PROGMEM = "wr1";
-#define memoryBase 32
+#define MEMORY_BASE 32
 
 int configAddress = 0;
 
@@ -47,7 +47,7 @@ void setup()
 {
   // Setup EEPROM with defaults
 
-  EEPROM.setMemPool(memoryBase, EEPROMSizeMega);
+  EEPROM.setMemPool(MEMORY_BASE, EEPROMSizeMega);
   configAddress = EEPROM.getAddress(sizeof(StoreStruct));
 
   if (!loadConfig())
