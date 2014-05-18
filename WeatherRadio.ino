@@ -39,18 +39,12 @@ struct StoreStruct
 
 // SD Card Globals
 File logFile;
-const char name_format[38] PROGMEM = "messages%02d%02d%04d-%02d%02d%02d.txt";
 
 // Si4707 Globals
 byte function = 0x00;           //  Function to be performed.
 
 void setup()
 {
-  // SD card filename with current time appended
-  // "messages000000-000000.txt" // 25 characters + 1 NULL character
-  char filename[26];
-  tmElements_t tm;
-
   // Setup EEPROM with defaults
 
   EEPROM.setMemPool(memoryBase, EEPROMSizeMega);
@@ -63,7 +57,8 @@ void setup()
   }
 
   // Setup Clock
-  if (!RTC.read(tm))
+  setSyncProvider(RTC.get);
+  if (timeStatus() != timeSet)
     errorLoop();
 
   // Setup SD Card
