@@ -27,7 +27,6 @@
 #define CONFIG_VERSION "wr1"
 #define memoryBase 32
 
-bool ok = true;
 int configAddress = 0;
 
 struct StoreStruct
@@ -56,8 +55,7 @@ void setup()
   EEPROM.setMemPool(memoryBase, EEPROMSizeUno);
   configAddress = EEPROM.getAddress(sizeof(StoreStruct));
 
-  ok = loadConfig();
-  if (!ok)
+  if (!loadConfig())
   {
     setDefaults();
     saveConfig();
