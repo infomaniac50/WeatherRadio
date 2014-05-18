@@ -138,7 +138,6 @@ void loop()
 
 void errorLoop()
 {
-  Serial.println(F("Error"));
   pinMode(ERROR_PIN, OUTPUT);
   digitalWrite(ERROR_PIN, LOW);
   // Blink forever

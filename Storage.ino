@@ -14,6 +14,5 @@ void saveConfig()
 void setDefaults()
 {
   strcpy_P(storage.version, CONFIG_VERSION);
-  // storage.version = CONFIG_VERSION;
   storage.frequency = 162550; //  6 digits only.
 }
