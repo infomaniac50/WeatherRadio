@@ -118,10 +118,9 @@ void setup()
   //  ASQ Interrupt Sources.
   //
   // Radio.setProperty(WB_ASQ_INT_SOURCE, (ALERTOFIEN | ALERTONIEN));
-  //
-  //  Tune to the desired frequency.
-  //
-  Radio.tune(storage.frequency);  //  6 digits only.
+
+  // Apply EEPROM settings
+  applyConfig();
 
   // Setup Other Stuff
 

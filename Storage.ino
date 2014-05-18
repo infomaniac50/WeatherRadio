@@ -6,6 +6,13 @@ bool loadConfig()
   return strcmp_P(storage.version, CONFIG_VERSION) == 0;
 }
 
+void applyConfig() {
+  //
+  //  Tune to the desired frequency.
+  //
+  Radio.tune(storage.frequency);  //  6 digits only.
+}
+
 void saveConfig()
 {
   EEPROM.writeBlock(configAddress, storage);
