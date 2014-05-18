@@ -64,22 +64,25 @@ void setup()
 
   // Setup Clock
   if (!RTC.read(tm))
-    loopError();
+    errorLoop();
 
   // Setup SD Card
   // Set hardware SS pin as output
   // Uno SS pin = 10
   // Mega SS pin = 53
-  pinMode(10, OUTPUT);
+  // SS is defined in the pins_arduino.h file
+  pinMode(SS, OUTPUT);
 
-  if (!SD.begin(10))
-    loopError();
+  // Currently using the Ethernet Shield. Not efficient but it works.
+  if (!SD.begin(4))
+    errorLoop();
 
-  sprintf_P(filename, name_format, tm.Month, tm.Day, tm.Year + 1970, tm.Hour, tm.Minute, tm.Second);
-  logFile = SD.open(filename, FILE_WRITE);
+  // sprintf_P(filename, name_format, tm.Month, tm.Day, tm.Year + 1970, tm.Hour, tm.Minute, tm.Second);
+  // logFile = SD.open(filename, FILE_WRITE);
+  logFile = SD.open("log.txt", FILE_WRITE);
 
   if (!logFile)
-    loopError();
+    errorLoop();
 
   // Setup Radio
 
@@ -132,7 +135,8 @@ void loop()
     getFunction();
 }
 
-void loopError()
+
+void errorLoop()
 {
   Serial.println(F("Error"));
   pinMode(ERROR_PIN, OUTPUT);
