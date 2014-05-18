@@ -120,7 +120,7 @@ void setup()
   //
   //  Tune to the desired frequency.
   //
-  Radio.tune(storage.frequency);  //  6 digits only.
+  Radio.tune(162550);  //  6 digits only.
 
   // Setup Other Stuff
 
