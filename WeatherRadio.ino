@@ -48,6 +48,7 @@ void setup()
   // On recent versions of Arduino the LED pin likes to turn on for no apparent reason
   pinMode(13, OUTPUT);
 
+  Serial.begin(115200);
   // Setup EEPROM with defaults
 
   EEPROM.setMemPool(MEMORY_BASE, EEPROMSizeMega);
@@ -87,7 +88,6 @@ void setup()
 
   // Setup Radio
 
-  Serial.begin(115200);
   delay(100);
   Serial.println(F("Starting up the Si4707......."));
   Serial.println();
