@@ -24,7 +24,8 @@
 
 #define ERROR_PIN 13
 // EEPROM Globals
-#define CONFIG_VERSION "wr1"
+// #define CONFIG_VERSION "wr1"
+const char CONFIG_VERSION[4] PROGMEM = "wr1";
 #define memoryBase 32
 
 int configAddress = 0;
@@ -163,7 +164,8 @@ void saveConfig()
 
 void setDefaults()
 {
-  storage.version = CONFIG_VERSION;
+  strcpy_P(storage.version, CONFIG_VERSION);
+  // storage.version = CONFIG_VERSION;
   storage.frequency = 162550; //  6 digits only.
 }
 
