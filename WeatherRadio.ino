@@ -45,6 +45,9 @@ byte function = 0x00;           //  Function to be performed.
 
 void setup()
 {
+  // On recent versions of Arduino the LED pin likes to turn on for no apparent reason
+  pinMode(13, OUTPUT);
+
   // Setup EEPROM with defaults
 
   EEPROM.setMemPool(MEMORY_BASE, EEPROMSizeMega);
