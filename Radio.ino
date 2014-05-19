@@ -234,10 +234,10 @@ bool tuneUp() {
 }
 
 bool tuneDown() {
-  if (channel >= WB_MAX_FREQUENCY)
+  if (channel <= WB_MIN_FREQUENCY)
     return false;
 
-    channel += WB_CHANNEL_SPACING;
+    channel -= WB_CHANNEL_SPACING;
     Radio.tune();
     return true;
 }
