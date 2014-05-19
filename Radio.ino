@@ -186,6 +186,8 @@ void getFunction()
       Radio.tune();
       break;
     }
+  case 'e':
+    saveConfig();
 
   default:
     break;
@@ -208,6 +210,7 @@ void showMenu()
   Serial.println(F("Volume + =\t\t '+'"));
   Serial.println(F("Mute / Unmute =\t\t 'm'"));
   Serial.println(F("On / Off =\t\t 'o'"));
+  Serial.println(F("Save Settings = \t 'e'"));
   Serial.println();
 }
 //

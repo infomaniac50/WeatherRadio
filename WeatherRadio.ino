@@ -25,7 +25,7 @@
 #define ERROR_PIN 13
 // EEPROM Globals
 // #define CONFIG_VERSION "wr1"
-const char CONFIG_VERSION[4] PROGMEM = "wr1";
+const char CONFIG_VERSION[4] PROGMEM = "wr2";
 #define MEMORY_BASE 32
 
 int configAddress = 0;
@@ -34,6 +34,7 @@ struct StoreStruct
 {
   char version[4];
   unsigned long frequency;
+  unsigned char volume;
 } storage;
 
 

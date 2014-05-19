@@ -10,11 +10,16 @@ void applyConfig() {
   //
   //  Tune to the desired frequency.
   //
-  Radio.tune(storage.frequency);  //  6 digits only.
+  volume = storage.volume;
+  channel = storage.frequency / 2.5;
+  Radio.setVolume(volume);
+  Radio.tune();  //  6 digits only.
 }
 
 void saveConfig()
 {
+  storage.frequency = channel * 2.5;
+  storage.volume = volume;
   EEPROM.updateBlock(configAddress, storage);
 }
 
@@ -22,4 +27,7 @@ void setDefaults()
 {
   strcpy_P(storage.version, CONFIG_VERSION);
   storage.frequency = 162550; //  6 digits only.
+  // 0x003F 63
+  // 0x002D 45 75% of 63
+  storage.volume = 0x002D;
 }
