@@ -131,11 +131,13 @@ void getFunction()
     if (!tuneDown())
       break;
     Serial.println(F("Channel down."));
+    break;
 
   case 'u':
     if (!tuneUp())
       break;
     Serial.println(F("Channel up."));
+    break;
 
   case 's':
     Serial.println(F("Scanning....."));
