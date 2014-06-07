@@ -22,7 +22,9 @@
 #include <SPI.h>
 #include <SD.h>
 
-#define ERROR_PIN 13
+#define ERROR_PIN 7
+#define STATUS_PIN 8
+
 // EEPROM Globals
 // #define CONFIG_VERSION "wr1"
 const char CONFIG_VERSION[4] PROGMEM = "wr2";
@@ -47,7 +49,8 @@ byte function = 0x00;           //  Function to be performed.
 void setup()
 {
   // On recent versions of Arduino the LED pin likes to turn on for no apparent reason
-  pinMode(13, OUTPUT);
+  pinMode(13, INPUT);
+  pinMode(STATUS_PIN, OUTPUT);
 
   Serial.begin(115200);
   // Setup EEPROM with defaults
@@ -57,9 +60,9 @@ void setup()
 
   if (!loadConfig())
   {
-    blink(13, 1500);
-    blink(13, 1500);
-    blink(13, 1500);
+    blink(STATUS_PIN, 1500);
+    blink(STATUS_PIN, 1500);
+    blink(STATUS_PIN, 1500);
     setDefaults();
     saveConfig();
   }
@@ -76,8 +79,8 @@ void setup()
   // SS is defined in the pins_arduino.h file
   pinMode(SS, OUTPUT);
 
-  // Currently using the Ethernet Shield. Not efficient but it works.
-  if (!SD.begin(4))
+  // Now using the good old Adafruit Data Logging Shield
+  if (!SD.begin(SS))
     errorLoop();
 
   // sprintf_P(filename, name_format, tm.Month, tm.Day, tm.Year + 1970, tm.Hour, tm.Minute, tm.Second);
@@ -95,7 +98,7 @@ void setup()
   delay(1000);
   showMenu();
   delay(1000);
-  Radio.begin(8);
+  Radio.begin(22);
   Radio.patch();          //  Use this one to to include the 1050 Hz patch.
   //Radio.on();           //  Use this one if not using the patch.
   //Radio.getRevision();  //  Only captured on the logic analyzer - not displayed.
@@ -146,6 +149,19 @@ void errorLoop()
     delay(1000);
     blink(ERROR_PIN, 250);
     blink(ERROR_PIN, 250);
+  }
+}
+
+void statusLoop()
+{
+  pinMode(STATUS_PIN, OUTPUT);
+  digitalWrite(STATUS_PIN, LOW);
+  // Blink forever
+  while (true)
+  {
+    delay(1000);
+    blink(STATUS_PIN, 250);
+    blink(STATUS_PIN, 250);
   }
 }
 
