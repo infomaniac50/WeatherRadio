@@ -39,6 +39,9 @@ struct StoreStruct
   unsigned char volume;
 } storage;
 
+#define MENU_PRINTLN Serial.println
+#define MENU_PRINT Serial.print
+#define MENU_READ Serial.read
 
 // SD Card Globals
 File logFile;
@@ -90,14 +93,10 @@ void setup()
   if (!logFile)
     errorLoop();
 
-  // Setup Radio
-
+  MENU_PRINTLN(F("Starting up the Si4707.......\n"));
   delay(100);
-  Serial.println(F("Starting up the Si4707......."));
-  Serial.println();
-  delay(1000);
-  showMenu();
-  delay(1000);
+
+  // Setup Radio
   Radio.begin(22);
   Radio.patch();          //  Use this one to to include the 1050 Hz patch.
   //Radio.on();           //  Use this one if not using the patch.
@@ -128,6 +127,7 @@ void setup()
 
   // Setup Other Stuff
 
+  showMenu();
 }
 
 void loop()

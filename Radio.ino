@@ -11,12 +11,12 @@ void getStatus()
   if (intStatus & STCINT)
   {
     Radio.getTuneStatus(INTACK);  //  Using INTACK clears STCINT, CHECK preserves it.
-    Serial.print(F("FREQ: "));
-    Serial.print(frequency, 3);
-    Serial.print(F("  RSSI: "));
-    Serial.print(rssi);
-    Serial.print(F("  SNR: "));
-    Serial.println(snr);
+    MENU_PRINT(F("FREQ: "));
+    MENU_PRINT(frequency, 3);
+    MENU_PRINT(F("  RSSI: "));
+    MENU_PRINT(rssi);
+    MENU_PRINT(F("  SNR: "));
+    MENU_PRINTLN(snr);
     Radio.sameFlush();             //  This should be done after any tune function.
     //intStatus |= RSQINT;         //  We can force it to get rsqStatus on any tune.
   }
@@ -24,12 +24,12 @@ void getStatus()
   if (intStatus & RSQINT)
   {
     Radio.getRsqStatus(INTACK);
-    Serial.print(F("RSSI: "));
-    Serial.print(rssi);
-    Serial.print(F("  SNR: "));
-    Serial.print(snr);
-    Serial.print(F("  FREQOFF: "));
-    Serial.println(freqoff);
+    MENU_PRINT(F("RSSI: "));
+    MENU_PRINT(rssi);
+    MENU_PRINT(F("  SNR: "));
+    MENU_PRINT(snr);
+    MENU_PRINT(F("  FREQOFF: "));
+    MENU_PRINTLN(freqoff);
   }
 
   if (intStatus & SAMEINT)
@@ -39,8 +39,8 @@ void getStatus()
     if (sameStatus & EOMDET)
     {
       Radio.sameFlush();
-      Serial.println(F("EOM detected."));
-      Serial.println();
+      MENU_PRINTLN(F("EOM detected."));
+      MENU_PRINTLN();
       //  More application specific code could go here. (Mute audio, turn something on/off, etc.)
       return;
     }
@@ -51,30 +51,30 @@ void getStatus()
     if (msgStatus & MSGPAR)
     {
       msgStatus &= ~MSGPAR;                         // Clear the parse status, so that we don't print it again.
-      Serial.print(F("Originator: "));
-      Serial.println(sameOriginatorName);
-      Serial.print(F("Event: "));
-      Serial.println(sameEventName);
-      Serial.print(F("Locations: "));
-      Serial.println(sameLocations);
-      Serial.print(F("Location Codes: "));
+      MENU_PRINT(F("Originator: "));
+      MENU_PRINTLN(sameOriginatorName);
+      MENU_PRINT(F("Event: "));
+      MENU_PRINTLN(sameEventName);
+      MENU_PRINT(F("Locations: "));
+      MENU_PRINTLN(sameLocations);
+      MENU_PRINT(F("Location Codes: "));
 
       for (int i = 0; i < sameLocations; i++)
       {
-        Serial.print(sameLocationCodes[i]);
-        Serial.print(' ');
+        MENU_PRINT(sameLocationCodes[i]);
+        MENU_PRINT(' ');
       }
 
-      Serial.println();
-      Serial.print(F("Duration: "));
-      Serial.println(sameDuration);
-      Serial.print(F("Day: "));
-      Serial.println(sameDay);
-      Serial.print(F("Time: "));
-      Serial.println(sameTime);
-      Serial.print(F("Callsign: "));
-      Serial.println(sameCallSign);
-      Serial.println();
+      MENU_PRINTLN();
+      MENU_PRINT(F("Duration: "));
+      MENU_PRINTLN(sameDuration);
+      MENU_PRINT(F("Day: "));
+      MENU_PRINTLN(sameDay);
+      MENU_PRINT(F("Time: "));
+      MENU_PRINTLN(sameTime);
+      MENU_PRINT(F("Callsign: "));
+      MENU_PRINTLN(sameCallSign);
+      MENU_PRINTLN();
     }
 
     if (msgStatus & MSGPUR)  //  Signals that the third header has been received.
@@ -91,15 +91,15 @@ void getStatus()
     if (asqStatus == 0x01)
     {
       Radio.sameFlush();
-      Serial.println(F("WAT is on."));
-      Serial.println();
+      MENU_PRINTLN(F("WAT is on."));
+      MENU_PRINTLN();
       //  More application specific code could go here.  (Unmute audio, turn something on/off, etc.)
     }
 
     if (asqStatus == 0x02)
     {
-      Serial.println(F("WAT is off."));
-      Serial.println();
+      MENU_PRINTLN(F("WAT is off."));
+      MENU_PRINTLN();
       //  More application specific code could go here.  (Mute audio, turn something on/off, etc.)
     }
 
@@ -109,8 +109,8 @@ void getStatus()
   if (intStatus & ERRINT)
   {
     intStatus &= ~ERRINT;
-    Serial.println(F("An error occured!"));
-    Serial.println();
+    MENU_PRINTLN(F("An error occured!"));
+    MENU_PRINTLN();
   }
 }
 //
@@ -118,7 +118,7 @@ void getStatus()
 //
 void getFunction()
 {
-  function = Serial.read();
+  function = MENU_READ();
 
   switch (function)
   {
@@ -130,45 +130,45 @@ void getFunction()
   case 'd':
     if (!tuneDown())
       break;
-    Serial.println(F("Channel down."));
+    MENU_PRINTLN(F("Channel down."));
     break;
 
   case 'u':
     if (!tuneUp())
       break;
-    Serial.println(F("Channel up."));
+    MENU_PRINTLN(F("Channel up."));
     break;
 
   case 's':
-    Serial.println(F("Scanning....."));
+    MENU_PRINTLN(F("Scanning....."));
     Radio.scan();
     break;
 
   case '-':
     if (!volumeDown())
       break;
-    Serial.print(F("Volume: "));
-    Serial.println(volume);
+    MENU_PRINT(F("Volume: "));
+    MENU_PRINTLN(volume);
     break;
 
   case '+':
     if (!volumeUp())
       break;
-    Serial.print(F("Volume: "));
-    Serial.println(volume);
+    MENU_PRINT(F("Volume: "));
+    MENU_PRINTLN(volume);
     break;
 
   case 'm':
     if (mute)
     {
       Radio.setMute(OFF);
-      Serial.println(F("Mute: Off"));
+      MENU_PRINTLN(F("Mute: Off"));
       break;
     }
     else
     {
       Radio.setMute(ON);
-      Serial.println(F("Mute: On"));
+      MENU_PRINTLN(F("Mute: On"));
       break;
     }
 
@@ -176,13 +176,13 @@ void getFunction()
     if (power)
     {
       Radio.off();
-      Serial.println(F("Radio powered off."));
+      MENU_PRINTLN(F("Radio powered off."));
       break;
     }
     else
     {
       Radio.on();
-      Serial.println(F("Radio powered on."));
+      MENU_PRINTLN(F("Radio powered on."));
       Radio.tune();
       break;
     }
@@ -201,27 +201,27 @@ void getFunction()
 //
 void showMenu()
 {
-  Serial.println();
-  Serial.println(F("Display this menu =\t 'h' or '?'"));
-  Serial.println(F("Channel down =\t\t 'd'"));
-  Serial.println(F("Channel up =\t\t 'u'"));
-  Serial.println(F("Scan =\t\t\t 's'"));
-  Serial.println(F("Volume - =\t\t '-'"));
-  Serial.println(F("Volume + =\t\t '+'"));
-  Serial.println(F("Mute / Unmute =\t\t 'm'"));
-  Serial.println(F("On / Off =\t\t 'o'"));
-  Serial.println(F("Save Settings = \t 'e'"));
-  Serial.println();
+  MENU_PRINTLN();
+  MENU_PRINTLN(F("Display this menu =\t 'h' or '?'"));
+  MENU_PRINTLN(F("Channel down =\t\t 'd'"));
+  MENU_PRINTLN(F("Channel up =\t\t 'u'"));
+  MENU_PRINTLN(F("Scan =\t\t\t 's'"));
+  MENU_PRINTLN(F("Volume - =\t\t '-'"));
+  MENU_PRINTLN(F("Volume + =\t\t '+'"));
+  MENU_PRINTLN(F("Mute / Unmute =\t\t 'm'"));
+  MENU_PRINTLN(F("On / Off =\t\t 'o'"));
+  MENU_PRINTLN(F("Save Settings = \t 'e'"));
+  MENU_PRINTLN();
 }
 //
 //  Simple Hex print utility - Prints a Byte with a leading zero and trailing space.
 //
 void printHex(byte value)
 {
-  Serial.print(F("0x"));
-  Serial.print(value >> 4 & 0x0F, HEX);
-  Serial.print(value >> 0 & 0x0F, HEX);
-  Serial.print("  ");
+  MENU_PRINT(F("0x"));
+  MENU_PRINT(value >> 4 & 0x0F, HEX);
+  MENU_PRINT(value >> 0 & 0x0F, HEX);
+  MENU_PRINT("  ");
 }
 //
 //  The End.
