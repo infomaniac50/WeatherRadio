@@ -12,6 +12,8 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
+#include "uart_stdio.h"
+#include "ArduinoStdio.h"
 
 #include <EEPROMex.h>
 
@@ -39,10 +41,6 @@ struct StoreStruct
   unsigned char volume;
 } storage;
 
-#define MENU_PRINTLN Serial.println
-#define MENU_PRINT Serial.print
-#define MENU_READ Serial.read
-
 // SD Card Globals
 File logFile;
 
@@ -52,12 +50,14 @@ byte function = 0x00;           //  Function to be performed.
 void setup()
 {
   // On recent versions of Arduino the LED pin likes to turn on for no apparent reason
-  pinMode(13, INPUT);
+  pinMode(13, OUTPUT);
   pinMode(STATUS_PIN, OUTPUT);
+  pinMode(ERROR_PIN, OUTPUT);
 
   Serial.begin(115200);
-  // Setup EEPROM with defaults
+  stdio_begin(SERIAL_OUT, SERIAL_IN);
 
+  // Setup EEPROM with defaults
   EEPROM.setMemPool(MEMORY_BASE, EEPROMSizeMega);
   configAddress = EEPROM.getAddress(sizeof(StoreStruct));
 
@@ -93,18 +93,29 @@ void setup()
   if (!logFile)
     errorLoop();
 
-  MENU_PRINTLN(F("Starting up the Si4707.......\n"));
+  printf_P(PSTR("Starting up the Si4707.......\n\n"));
   delay(100);
 
   // Setup Radio
   Radio.begin(22);
   Radio.patch();          //  Use this one to to include the 1050 Hz patch.
   //Radio.on();           //  Use this one if not using the patch.
-  //Radio.getRevision();  //  Only captured on the logic analyzer - not displayed.
+  Radio.getRevision();  //  Only captured on the logic analyzer - not displayed.
+  uint8_t pn = response[1];
+  uint8_t fwmajor = response[2];
+  uint8_t fwminor = response[3];
+  uint8_t patchH = response[4];
+  uint8_t patchL = response[5];
+  uint8_t cmpmajor = response[6];
+  uint8_t cmpminor = response[7];
+  uint8_t chiprev = response[8];
+
+  printf_P(PSTR("Version Information\nPN:%u\nFW Major:%u\nFW Minor:%u\nPatchH:%u\nPatchL:%u\nCMP Major:%u\nCMP Minor:%u\nChip Rev:%u\n"), pn, fwmajor, fwminor, patchH,patchL, cmpmajor, cmpminor, chiprev);
+
   //
   //  All useful interrupts are enabled here.
   //
-  // Radio.setProperty(GPO_IEN, (CTSIEN | ERRIEN | RSQIEN | SAMEIEN | ASQIEN | STCIEN));
+  Radio.setProperty(GPO_IEN, (CTSIEN | ERRIEN | RSQIEN | SAMEIEN | ASQIEN | STCIEN));
   //
   //  RSQ Interrupt Sources.
   //
@@ -116,11 +127,11 @@ void setup()
   //
   //  SAME Interrupt Sources.
   //
-  // Radio.setProperty(WB_SAME_INTERRUPT_SOURCE, (EOMDETIEN | HDRRDYIEN));
+  Radio.setProperty(WB_SAME_INTERRUPT_SOURCE, (EOMDETIEN | HDRRDYIEN));
   //
   //  ASQ Interrupt Sources.
   //
-  // Radio.setProperty(WB_ASQ_INT_SOURCE, (ALERTOFIEN | ALERTONIEN));
+  Radio.setProperty(WB_ASQ_INT_SOURCE, (ALERTOFIEN | ALERTONIEN));
 
   // Apply EEPROM settings
   applyConfig();
