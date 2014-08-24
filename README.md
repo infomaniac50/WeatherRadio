@@ -2,6 +2,13 @@
 
 Arduino based NOAA weather radio
 
+### Required Libraries ###
+- ArduinoStdio - https://github.com/infomaniac50/ArduinoStdio
+- EEPROMEx - https://github.com/infomaniac50/EEPROMEx
+- Time - https://www.pjrc.com/teensy/td_libs_Time.html
+- DS1307RTC - https://www.pjrc.com/teensy/td_libs_DS1307RTC.html
+- Si4707 - https://github.com/infomaniac50/Si4707
+
 #### Notes ####
   **libprintf_flt.a - using printf floating point support for Arduino**
   * http://www.avrfreaks.net/index.php?name=PNphpBB2&file=printview&t=56712&start=0
