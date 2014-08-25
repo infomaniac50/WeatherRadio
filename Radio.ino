@@ -11,7 +11,10 @@ void getStatus()
   if (intStatus & STCINT)
   {
     Radio.getTuneStatus(INTACK);  //  Using INTACK clears STCINT, CHECK preserves it.
-    printf_P(PSTR("FREQ: %.3f  RSSI: %u  SNR: %u\n"), frequency, rssi, snr);
+    stdout << F("FREQ: ") << _FLOAT(frequency, 3);
+    stdout << F("RSSI: ") << rssi;
+    stdout << F("SNR: ") << snr << endl;
+
     Radio.sameFlush();             //  This should be done after any tune function.
     //intStatus |= RSQINT;         //  We can force it to get rsqStatus on any tune.
   }
@@ -19,7 +22,9 @@ void getStatus()
   if (intStatus & RSQINT)
   {
     Radio.getRsqStatus(INTACK);
-    printf_P(PSTR("RSSI: %u  SNR: %u  FREQOFF: %u\n"), rssi, snr, freqoff);
+    stdout << F("RSSI: ") << rssi;
+    stdout << F("SNR: ") << snr;
+    stdout << F("FREQOFF: ") << freqoff << endl;
   }
 
   if (intStatus & SAMEINT)
@@ -29,7 +34,7 @@ void getStatus()
     if (sameStatus & EOMDET)
     {
       Radio.sameFlush();
-      printf_P(PSTR("EOM detected.\n"));
+      stdout << F("EOM detected.") << endl;
       //  More application specific code could go here. (Mute audio, turn something on/off, etc.)
       return;
     }
@@ -41,14 +46,21 @@ void getStatus()
     {
       msgStatus &= ~MSGPAR;                         // Clear the parse status, so that we don't print it again.
 
-      printf_P(PSTR("Originator: %.4s\nEvent: %.4s\nLocations: %u\nLocation Codes: "), sameOriginatorName, sameEventName, sameLocations);
+      stdout << F("Originator: ") << sameOriginatorName << endl;
+      stdout << F("Event: ") << sameEventName << endl;
+      stdout << F("Locations: ") << sameLocations << endl;
+      
+      stdout << F("Location Codes: ") << endl;
 
       for (int i = 0; i < sameLocations; i++)
       {
-        printf_P("%lu ", sameLocationCodes[i]);
+        stdout << sameLocationCodes[i] << endl;
       }
 
-      printf_P(PSTR("Duration: %u Day: %u Time: %u\nCallsign: %.9s\n"), sameDuration, sameDay, sameTime, sameCallSign);
+      stdout << F("Duration: ") << sameDuration;
+      stdout << F("Day: ") << sameDay;
+      stdout << F("Time: ") << sameTime << endl;
+      stdout << F("Callsign: ") << sameCallSign << endl;
     }
 
     if (msgStatus & MSGPUR)  //  Signals that the third header has been received.
@@ -65,13 +77,13 @@ void getStatus()
     if (asqStatus == 0x01)
     {
       Radio.sameFlush();
-      printf_P(PSTR("WAT is on.\n"));
+      stdout << F("WAT is on.") << endl;
       //  More application specific code could go here.  (Unmute audio, turn something on/off, etc.)
     }
 
     if (asqStatus == 0x02)
     {
-      printf_P(PSTR("WAT is off.\n"));
+      stdout << F("WAT is off.") << endl;
       //  More application specific code could go here.  (Mute audio, turn something on/off, etc.)
     }
 
@@ -81,7 +93,7 @@ void getStatus()
   if (intStatus & ERRINT)
   {
     intStatus &= ~ERRINT;
-    printf_P(PSTR("An error occured!\n\n"));
+    stdout << F("An error occured!") << endl << endl;
   }
 }
 //
@@ -101,43 +113,43 @@ void getFunction()
   case 'd':
     if (!tuneDown())
       break;
-    printf_P(PSTR("Channel down.\n"));
+    stdout << F("Channel down.") << endl;
     break;
 
   case 'u':
     if (!tuneUp())
       break;
-    printf_P(PSTR("Channel up.\n"));
+    stdout << F("Channel up.") << endl;
     break;
 
   case 's':
-    printf_P(PSTR("Scanning.....\n"));
+    stdout << F("Scanning.....") << endl;
     Radio.scan();
     break;
 
   case '-':
     if (!volumeDown())
       break;
-    printf_P(PSTR("Volume: %u\n"), volume);
+    stdout << F("Volume: ") << volume << endl;
     break;
 
   case '+':
     if (!volumeUp())
       break;
-    printf_P(PSTR("Volume: %u\n"), volume);
+    stdout << F("Volume: ") << volume << endl;
     break;
 
   case 'm':
     if (mute)
     {
       Radio.setMute(OFF);
-      printf_P(PSTR("Mute: Off\n"));
+      stdout << F("Mute: Off") << endl;
       break;
     }
     else
     {
       Radio.setMute(ON);
-      printf_P(PSTR("Mute: On\n"));
+      stdout << F("Mute: On") << endl;
       break;
     }
 
@@ -145,19 +157,19 @@ void getFunction()
     if (power)
     {
       Radio.off();
-      printf_P(PSTR("Radio powered off.\n"));
+      stdout << F("Radio powered off.") << endl;
       break;
     }
     else
     {
       Radio.on();
-      printf_P(PSTR("Radio powered on.\n"));
+      stdout << F("Radio powered on.") << endl;
       Radio.tune();
       break;
     }
   case 'e':
     saveConfig();
-    printf_P(PSTR("Config saved.\n"));
+    stdout << F("Config saved.") << endl;
   default:
     break;
   }
@@ -170,14 +182,23 @@ void getFunction()
 //
 void showMenu()
 {
-  printf_P(PSTR("\nDisplay this menu =\t 'h' or '?'\nChannel down =\t\t 'd'\nChannel up =\t\t 'u'\nScan =\t\t\t 's'\nVolume - =\t\t '-'\nVolume + =\t\t '+'\nMute / Unmute =\t\t 'm'\nOn / Off =\t\t 'o'\nSave Settings = \t 'e'\n\n"));
+  stdout << F("Display this menu =\t 'h' or '?'") << endl;
+  stdout << F("Channel down =\t\t 'd'") << endl;
+  stdout << F("Channel up =\t\t 'u'") << endl;
+  stdout << F("Scan =\t\t\t 's'") << endl;
+  stdout << F("Volume - =\t\t '-'") << endl;
+  stdout << F("Volume + =\t\t '+'") << endl;
+  stdout << F("Mute / Unmute =\t\t 'm'") << endl;
+  stdout << F("On / Off =\t\t 'o'") << endl;
+  stdout << F("Save Settings = \t 'e'") << endl << endl;
+  
 }
 //
 //  Simple Hex print utility - Prints a Byte with a leading zero and trailing space.
 //
 void printHex(byte value)
 {
-  printf_P(PSTR("0x%X "), value);
+  stdout << F("0x") << _HEX(value) << " ";
 }
 //
 //  The End.

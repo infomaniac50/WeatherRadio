@@ -1,5 +1,13 @@
 // All EEPROM and SD Card stuff will go here
 
+unsigned long channelToFrequency() {
+  return channel * 2.5;
+}
+
+unsigned long frequencyToChannel() {
+  return storage.frequency / 2.5;
+}
+
 bool loadConfig()
 {
   EEPROM.readBlock(configAddress, storage);

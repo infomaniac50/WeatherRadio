@@ -12,8 +12,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
-#include "uart_stdio.h"
-#include "ArduinoStdio.h"
+#include <Streaming.h>
 
 #include <EEPROMex.h>
 
@@ -27,16 +26,20 @@
 #define ERROR_PIN 7
 #define STATUS_PIN 8
 
+// 20 + 1 characters 
+#define VERSION __DATE__ " " __TIME__
 // EEPROM Globals
 // #define CONFIG_VERSION "wr1"
-const char CONFIG_VERSION[4] PROGMEM = "wr2";
+const char CONFIG_VERSION[21] PROGMEM = VERSION;
 #define MEMORY_BASE 32
+
+#define stdout Serial
 
 int configAddress = 0;
 
 struct StoreStruct
 {
-  char version[4];
+  char version[21];
   unsigned long frequency;
   unsigned char volume;
 } storage;
@@ -55,7 +58,6 @@ void setup()
   pinMode(ERROR_PIN, OUTPUT);
 
   Serial.begin(115200);
-  stdio_begin(SERIAL_OUT, SERIAL_IN);
 
   // Setup EEPROM with defaults
   EEPROM.setMemPool(MEMORY_BASE, EEPROMSizeMega);
@@ -63,11 +65,8 @@ void setup()
 
   if (!loadConfig())
   {
-    blink(STATUS_PIN, 1500);
-    blink(STATUS_PIN, 1500);
-    blink(STATUS_PIN, 1500);
     setDefaults();
-    saveConfig();
+    stdout << F("Defaults set.\n");
   }
 
   // Setup Clock
@@ -93,7 +92,7 @@ void setup()
   if (!logFile)
     errorLoop();
 
-  printf_P(PSTR("Starting up the Si4707.......\n\n"));
+  stdout << F("Starting up the Si4707.......\n\n");
   delay(100);
 
   // Setup Radio
@@ -110,7 +109,15 @@ void setup()
   uint8_t cmpminor = response[7];
   uint8_t chiprev = response[8];
 
-  printf_P(PSTR("Version Information\nPN:%u\nFW Major:%u\nFW Minor:%u\nPatchH:%u\nPatchL:%u\nCMP Major:%u\nCMP Minor:%u\nChip Rev:%u\n"), pn, fwmajor, fwminor, patchH,patchL, cmpmajor, cmpminor, chiprev);
+  stdout << F("Version Information\n")
+  << F("PN: ") << pn << endl
+  << F("FW Major: ") << fwmajor << endl
+  << F("FW Minor: ") << fwminor << endl
+  << F("PatchH: ") << patchH << endl
+  << F("PatchL: ") << patchL << endl
+  << F("CMP Major: ") << cmpmajor << endl
+  << F("CMP Minor: ") << cmpminor << endl
+  << F("Chip Rev: ") << chiprev << endl << endl;
 
   //
   //  All useful interrupts are enabled here.
@@ -146,13 +153,12 @@ void loop()
   if (intStatus & INTAVL)
     getStatus();
 
-  if (Serial.available() > 0)
+  if (!Serial.available())
     getFunction();
 }
 
 void errorLoop()
 {
-  pinMode(ERROR_PIN, OUTPUT);
   digitalWrite(ERROR_PIN, LOW);
   // Blink forever
   while (true)
@@ -165,7 +171,6 @@ void errorLoop()
 
 void statusLoop()
 {
-  pinMode(STATUS_PIN, OUTPUT);
   digitalWrite(STATUS_PIN, LOW);
   // Blink forever
   while (true)
