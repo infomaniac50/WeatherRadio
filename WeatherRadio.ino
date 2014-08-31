@@ -13,6 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 #include <Streaming.h>
+#include <Flash.h>
+
+#include "Strings.h"
 
 #include <EEPROMex.h>
 
@@ -26,7 +29,7 @@
 #define ERROR_PIN 7
 #define STATUS_PIN 8
 
-// 20 + 1 characters 
+// 20 + 1 characters
 #define VERSION __DATE__ " " __TIME__
 // EEPROM Globals
 // #define CONFIG_VERSION "wr1"
@@ -53,7 +56,7 @@ byte function = 0x00;           //  Function to be performed.
 void setup()
 {
   // On recent versions of Arduino the LED pin likes to turn on for no apparent reason
-  pinMode(13, OUTPUT);
+  pinMode(13, INPUT);
   pinMode(STATUS_PIN, OUTPUT);
   pinMode(ERROR_PIN, OUTPUT);
 
@@ -66,7 +69,7 @@ void setup()
   if (!loadConfig())
   {
     setDefaults();
-    stdout << F("Defaults set.\n");
+    stdout << DEFAULTS_SET_LABEL;
   }
 
   // Setup Clock
@@ -82,7 +85,7 @@ void setup()
   pinMode(SS, OUTPUT);
 
   // Now using the good old Adafruit Data Logging Shield
-  if (!SD.begin(SS))
+  if (!SD.begin(10))
     errorLoop();
 
   // sprintf_P(filename, name_format, tm.Month, tm.Day, tm.Year + 1970, tm.Hour, tm.Minute, tm.Second);
@@ -92,7 +95,7 @@ void setup()
   if (!logFile)
     errorLoop();
 
-  stdout << F("Starting up the Si4707.......\n\n");
+  stdout << STARTING_SI4707_LABEL;
   delay(100);
 
   // Setup Radio
@@ -109,15 +112,15 @@ void setup()
   uint8_t cmpminor = response[7];
   uint8_t chiprev = response[8];
 
-  stdout << F("Version Information\n")
-  << F("PN: ") << pn << endl
-  << F("FW Major: ") << fwmajor << endl
-  << F("FW Minor: ") << fwminor << endl
-  << F("PatchH: ") << patchH << endl
-  << F("PatchL: ") << patchL << endl
-  << F("CMP Major: ") << cmpmajor << endl
-  << F("CMP Minor: ") << cmpminor << endl
-  << F("Chip Rev: ") << chiprev << endl << endl;
+  stdout << VERSION_INFO_LABEL
+  << PART_NUMBER_LABEL << pn << endl
+  << FIRMWARE_MAJOR_LABEL << fwmajor << endl
+  << FIRMWARE_MINOR_LABEL << fwminor << endl
+  << PATCH_HIGH_LABEL << patchH << endl
+  << PATCH_LOW_LABEL << patchL << endl
+  << COMPONENT_MAJOR_LABEL << cmpmajor << endl
+  << COMPONENT_MINOR_LABEL << cmpminor << endl
+  << CHIP_REVISION_LABEL << chiprev << endl << endl;
 
   //
   //  All useful interrupts are enabled here.
@@ -151,13 +154,20 @@ void setup()
 void loop()
 {
   if (intStatus & INTAVL)
+  {
+    blink(ERROR_PIN, 50);
     getStatus();
+    blink(STATUS_PIN, 25);
+    blink(STATUS_PIN, 25);
+  }
 
-  if (!Serial.available())
+  if (Serial.available()) {
+    blink(STATUS_PIN, 25);
     getFunction();
+  }
 }
 
-void errorLoop()
+inline void errorLoop()
 {
   digitalWrite(ERROR_PIN, LOW);
   // Blink forever
@@ -169,7 +179,7 @@ void errorLoop()
   }
 }
 
-void statusLoop()
+inline void statusLoop()
 {
   digitalWrite(STATUS_PIN, LOW);
   // Blink forever
@@ -181,7 +191,7 @@ void statusLoop()
   }
 }
 
-void blink(int pin, int blinkDelay) {
+inline void blink(int pin, int blinkDelay) {
   digitalWrite(pin, HIGH);
   delay(blinkDelay);
   digitalWrite(pin, LOW);

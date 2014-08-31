@@ -1,20 +1,20 @@
 // All EEPROM and SD Card stuff will go here
 
-unsigned long channelToFrequency() {
+inline unsigned long channelToFrequency() {
   return channel * 2.5;
 }
 
-unsigned long frequencyToChannel() {
+inline unsigned long frequencyToChannel() {
   return storage.frequency / 2.5;
 }
 
-bool loadConfig()
+inline bool loadConfig()
 {
   EEPROM.readBlock(configAddress, storage);
   return strcmp_P(storage.version, CONFIG_VERSION) == 0;
 }
 
-void applyConfig() {
+inline void applyConfig() {
   //
   //  Tune to the desired frequency.
   //
@@ -24,14 +24,14 @@ void applyConfig() {
   Radio.tune();  //  6 digits only.
 }
 
-void saveConfig()
+inline void saveConfig()
 {
   storage.frequency = channel * 2.5;
   storage.volume = volume;
   EEPROM.updateBlock(configAddress, storage);
 }
 
-void setDefaults()
+inline void setDefaults()
 {
   strcpy_P(storage.version, CONFIG_VERSION);
   storage.frequency = 162550; //  6 digits only.
