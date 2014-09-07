@@ -38,8 +38,6 @@ File logFile;
 
 Settings settings;
 
-// Si4707 Globals
-byte function = 0x00;           //  Function to be performed.
 
 void setup()
 {
@@ -165,7 +163,7 @@ void loop()
 //
 inline void getFunction()
 {
-  function = Serial.read();
+  char function = Serial.read();
 
   switch (function)
   {
@@ -215,12 +213,10 @@ inline void getFunction()
   blink(STATUS_PIN, 25);
 
   Serial.flush();
-  function = 0x00;
 }
 //
 //  The End.
 //
-
 
 inline void errorLoop()
 {
