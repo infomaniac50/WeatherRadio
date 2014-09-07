@@ -81,66 +81,6 @@ inline void getStatus()
     printErrorOccurred();
   }
 }
-//
-//  Functions are performed here.
-//
-inline void getFunction()
-{
-  function = Serial.read();
-
-  switch (function)
-  {
-  case 'h':
-  case '?':
-    showMenu();
-    break;
-
-  case 'd':
-    if (tuneDown()) printChannelDown();
-    break;
-
-  case 'u':
-    if (tuneUp()) printChannelUp();
-    break;
-
-  case 's':
-    printScanning();
-    Radio.scan();
-    break;
-
-  case '-':
-    if (volumeDown()) printVolume();
-    break;
-
-  case '+':
-    if (volumeUp()) printVolume();
-    break;
-
-  case 'm':
-    toggleMute();
-    break;
-
-  case 'o':
-    togglePower();
-    break;
-
-  case 'e':
-    saveConfig();
-    printConfigSaved();
-    break;
-  default:
-    blink(ERROR_PIN, 25);
-    break;
-  }
-
-  blink(STATUS_PIN, 25);
-
-  Serial.flush();
-  function = 0x00;
-}
-//
-//  The End.
-//
 
 inline void toggleMute(void) {
   if (mute)
