@@ -3,6 +3,7 @@
 Arduino based NOAA weather radio
 
 ### Required Libraries ###
+- Flash - http://arduiniana.org/libraries/flash/
 - Streaming - http://arduiniana.org/libraries/streaming/
 - EEPROMEx - https://github.com/infomaniac50/EEPROMEx
 - Time - https://www.pjrc.com/teensy/td_libs_Time.html
