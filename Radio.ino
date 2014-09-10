@@ -12,9 +12,10 @@ inline void getStatus()
   if (intStatus & STCINT)
   {
     Radio.getTuneStatus(INTACK);  //  Using INTACK clears STCINT, CHECK preserves it.
-    printFrequency();
-    printRssi();
-    printSnr();
+    logging.printFrequency();
+    logging.printRssi();
+    logging.printSnr();
+    logging.logFrequency();
     Radio.sameFlush();             //  This should be done after any tune function.
     //intStatus |= RSQINT;         //  We can force it to get rsqStatus on any tune.
   }
@@ -22,9 +23,9 @@ inline void getStatus()
   if (intStatus & RSQINT)
   {
     Radio.getRsqStatus(INTACK);
-    printRssi();
-    printSnr();
-    printFrequencyOffset();
+    logging.printRssi();
+    logging.printSnr();
+    logging.printFrequencyOffset();
   }
 
   if (intStatus & SAMEINT)
@@ -34,7 +35,8 @@ inline void getStatus()
     if (sameStatus & EOMDET)
     {
       Radio.sameFlush();
-      printEom();
+      logging.printEom();
+      logging.logEom();
       //  More application specific code could go here. (Mute audio, turn something on/off, etc.)
       return;
     }
@@ -44,8 +46,9 @@ inline void getStatus()
 
     if (msgStatus & MSGPAR)
     {
-      msgStatus &= ~MSGPAR;                         // Clear the parse status, so that we don't print it again.
-      printSameMessage();
+      msgStatus &= ~MSGPAR;                         // Clear the parse status, so that we don't logging.print it again.
+      logging.printSameMessage();
+      logging.logSameMessage();
     }
 
     if (msgStatus & MSGPUR)  //  Signals that the third header has been received.
@@ -62,13 +65,13 @@ inline void getStatus()
     if (asqStatus == 0x01)
     {
       Radio.sameFlush();
-      printWatOn();
+      logging.printWatOn();
       //  More application specific code could go here.  (Unmute audio, turn something on/off, etc.)
     }
 
     if (asqStatus == 0x02)
     {
-      printWatOff();
+      logging.printWatOff();
       //  More application specific code could go here.  (Mute audio, turn something on/off, etc.)
     }
 
@@ -78,7 +81,8 @@ inline void getStatus()
   if (intStatus & ERRINT)
   {
     intStatus &= ~ERRINT;
-    printErrorOccurred();
+    logging.printErrorOccurred();
+    logging.logErrorOccurred();
   }
 }
 
@@ -86,12 +90,12 @@ inline void toggleMute(void) {
   if (mute)
   {
     Radio.setMute(OFF);
-    printMuteOff();
+    logging.printMuteOff();
   }
   else
   {
     Radio.setMute(ON);
-    printMuteOn();
+    logging.printMuteOn();
   }
 }
 
@@ -99,13 +103,43 @@ inline void togglePower(void) {
   if (power)
   {
     Radio.off();
-    printRadioOff();
+    logging.printRadioOff();
+    logging.end();
   }
   else
   {
-    Radio.on();
-    printRadioOn();
-    Radio.tune();
+    logging.begin();
+    Radio.patch();          //  Use this one to to include the 1050 Hz patch.
+    //Radio.on();           //  Use this one if not using the patch.
+    logging.printRadioVersion();
+    //
+    //  All useful interrupts are enabled here.
+    //
+    Radio.setProperty(GPO_IEN, (CTSIEN | ERRIEN | RSQIEN | SAMEIEN | ASQIEN | STCIEN));
+    //
+    //  RSQ Interrupt Sources.
+    //
+    Radio.setProperty(WB_RSQ_SNR_HIGH_THRESHOLD, 0x007F);   // 127 dBuV for testing..want it high
+    Radio.setProperty(WB_RSQ_SNR_LOW_THRESHOLD, 0x0001);    // 1 dBuV for testing
+    Radio.setProperty(WB_RSQ_RSSI_HIGH_THRESHOLD, 0x004D);  // -30 dBm for testing
+    Radio.setProperty(WB_RSQ_RSSI_LOW_THRESHOLD, 0x0007);   // -100 dBm for testing
+    //Radio.setProperty(WB_RSQ_INT_SOURCE, (SNRHIEN | SNRLIEN | RSSIHIEN | RSSILIEN));
+    //
+    //  SAME Interrupt Sources.
+    //
+    Radio.setProperty(WB_SAME_INTERRUPT_SOURCE, (EOMDETIEN | HDRRDYIEN));
+    //
+    //  ASQ Interrupt Sources.
+    //
+    Radio.setProperty(WB_ASQ_INT_SOURCE, (ALERTOFIEN | ALERTONIEN));
+
+    //
+    //  Tune to the desired frequency.
+    //
+    Radio.setVolume(volume);
+    Radio.tune();  //  6 digits only.
+
+    logging.printRadioOn();
   }
 }
 

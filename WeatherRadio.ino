@@ -15,8 +15,6 @@
 #include <Streaming.h>
 #include <Flash.h>
 
-#include "Strings.h"
-
 #include <EEPROMex.h>
 
 #include <Wire.h>
@@ -27,17 +25,14 @@
 #include <SD.h>
 
 #include "Settings.h"
+#include "Logging.h"
 
 #define ERROR_PIN 7
 #define STATUS_PIN 8
 
-#define stdout Serial
-
-// SD Card Globals
-File logFile;
 
 Settings settings;
-
+Logging logging;
 
 void setup()
 {
@@ -51,20 +46,6 @@ void setup()
   pinMode(STATUS_PIN, OUTPUT);
   pinMode(ERROR_PIN, OUTPUT);
 
-  Serial.begin(115200);
-
-  settings.loadConfig();
-  if (!settings.checkVersion())
-  {
-    settings.setDefaults();
-    stdout << DEFAULTS_SET_LABEL;
-  }
-
-  // Setup Clock
-  setSyncProvider(RTC.get);
-  if (timeStatus() != timeSet)
-    errorLoop();
-
   // Setup SD Card
   // Set hardware SS pin as output
   // Uno SS pin = 10
@@ -72,74 +53,27 @@ void setup()
   // SS is defined in the pins_arduino.h file
   pinMode(SS, OUTPUT);
 
-  // Now using the good old Adafruit Data Logging Shield
-  if (!SD.begin(10))
+  Serial.begin(115200);
+
+  // Setup Other Stuff
+  if (!logging.begin())
     errorLoop();
 
-  logFile = SD.open("log.txt", FILE_WRITE);
+  settings.loadConfig();
+  if (!settings.checkVersion())
+  {
+    settings.setDefaults();
+    logging.printDefaultsSet();
+  }
 
-  if (!logFile)
-    errorLoop();
-
-  stdout << STARTING_SI4707_LABEL;
+  logging.printBooting();
   delay(100);
 
   // Setup Radio
   Radio.begin(22);
-  Radio.patch();          //  Use this one to to include the 1050 Hz patch.
-  //Radio.on();           //  Use this one if not using the patch.
-  Radio.getRevision();  //  Only captured on the logic analyzer - not displayed.
-  // The hell it ain't :p
-  uint8_t pn = response[1];
-  uint8_t fwmajor = response[2];
-  uint8_t fwminor = response[3];
-  uint8_t patchH = response[4];
-  uint8_t patchL = response[5];
-  uint8_t cmpmajor = response[6];
-  uint8_t cmpminor = response[7];
-  uint8_t chiprev = response[8];
 
-  stdout << VERSION_INFO_LABEL
-  << PART_NUMBER_LABEL << pn << endl
-  << FIRMWARE_MAJOR_LABEL << fwmajor << endl
-  << FIRMWARE_MINOR_LABEL << fwminor << endl
-  << PATCH_HIGH_LABEL << patchH << endl
-  << PATCH_LOW_LABEL << patchL << endl
-  << COMPONENT_MAJOR_LABEL << cmpmajor << endl
-  << COMPONENT_MINOR_LABEL << cmpminor << endl
-  << CHIP_REVISION_LABEL << chiprev << endl << endl;
-
-  //
-  //  All useful interrupts are enabled here.
-  //
-  Radio.setProperty(GPO_IEN, (CTSIEN | ERRIEN | RSQIEN | SAMEIEN | ASQIEN | STCIEN));
-  //
-  //  RSQ Interrupt Sources.
-  //
-  Radio.setProperty(WB_RSQ_SNR_HIGH_THRESHOLD, 0x007F);   // 127 dBuV for testing..want it high
-  Radio.setProperty(WB_RSQ_SNR_LOW_THRESHOLD, 0x0001);    // 1 dBuV for testing
-  Radio.setProperty(WB_RSQ_RSSI_HIGH_THRESHOLD, 0x004D);  // -30 dBm for testing
-  Radio.setProperty(WB_RSQ_RSSI_LOW_THRESHOLD, 0x0007);   // -100 dBm for testing
-  //Radio.setProperty(WB_RSQ_INT_SOURCE, (SNRHIEN | SNRLIEN | RSSIHIEN | RSSILIEN));
-  //
-  //  SAME Interrupt Sources.
-  //
-  Radio.setProperty(WB_SAME_INTERRUPT_SOURCE, (EOMDETIEN | HDRRDYIEN));
-  //
-  //  ASQ Interrupt Sources.
-  //
-  Radio.setProperty(WB_ASQ_INT_SOURCE, (ALERTOFIEN | ALERTONIEN));
-
-  //
-  //  Tune to the desired frequency.
-  //
-  Radio.setVolume(volume);
-  Radio.tune();  //  6 digits only.
-
-
-  // Setup Other Stuff
-
-  showMenu();
+  togglePower();
+  logging.showMenu();
 }
 
 void loop()
@@ -169,28 +103,28 @@ inline void getFunction()
   {
   case 'h':
   case '?':
-    showMenu();
+    logging.showMenu();
     break;
 
   case 'd':
-    if (tuneDown()) printChannelDown();
+    if (tuneDown()) logging.printChannelDown();
     break;
 
   case 'u':
-    if (tuneUp()) printChannelUp();
+    if (tuneUp()) logging.printChannelUp();
     break;
 
   case 's':
-    printScanning();
+    logging.printScanning();
     Radio.scan();
     break;
 
   case '-':
-    if (volumeDown()) printVolume();
+    if (volumeDown()) logging.printVolume();
     break;
 
   case '+':
-    if (volumeUp()) printVolume();
+    if (volumeUp()) logging.printVolume();
     break;
 
   case 'm':
@@ -203,7 +137,7 @@ inline void getFunction()
 
   case 'e':
     settings.saveConfig();
-    printConfigSaved();
+    logging.printConfigSaved();
     break;
   default:
     blink(ERROR_PIN, 25);
@@ -211,8 +145,6 @@ inline void getFunction()
   }
 
   blink(STATUS_PIN, 25);
-
-  Serial.flush();
 }
 //
 //  The End.
