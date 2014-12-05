@@ -115,7 +115,11 @@ inline void togglePower(void) {
     //
     //  All useful interrupts are enabled here.
     //
-    Radio.setProperty(GPO_IEN, (CTSIEN | ERRIEN | RSQIEN | SAMEIEN | ASQIEN | STCIEN));
+    // Disable CTSIEN as it was getting to be a pain.
+    // CTSI assert -> getStatus() -> Si CMD -> CTSI assert -> forever and ever and ever ..........
+    // I believe the Si4707 library already delays a proper amount of time after each command.
+    // Radio.setProperty(GPO_IEN, (CTSIEN | ERRIEN | RSQIEN | SAMEIEN | ASQIEN | STCIEN));
+    Radio.setProperty(GPO_IEN, (ERRIEN | RSQIEN | SAMEIEN | ASQIEN | STCIEN));
     //
     //  RSQ Interrupt Sources.
     //

@@ -78,12 +78,18 @@ void setup()
 
 void loop()
 {
-  if (intStatus & INTAVL)
-  {
-    blink(ERROR_PIN, 50);
+  // If all that came back after we fetch the status bits are CTSINT and INTAVL
+  if (intStatus == (CTSINT | INTAVL)) {
+    // Clear the whole shebang so we dont check again until the next interrupt.
+    // Defined as uint8_t so no half reads/writes and is atomic except for the conditional.
+    // On a rare occasion the ISR could set INTAVL right here.
+    // Then it would be cleared here.
+    intStatus = 0;
+  }
+
+  if (intStatus & INTAVL) {
+    blink(ERROR_PIN, 25);
     getStatus();
-    blink(STATUS_PIN, 25);
-    blink(STATUS_PIN, 25);
   }
 
   if (Serial.available()) {
