@@ -1,123 +1,54 @@
 #include <Arduino.h>
 
 #include <Streaming.h>
-#include <Flash.h>
 
 #include <Wire.h>
 #include <Time.h>
 #include <DS1307RTC.h>
 #include <SI4707.h>
-#include <SPI.h>
-#include <SD.h>
 
 #include "Logging.h"
 
-#define stdout Serial
-
-FLASH_STRING(FREQ_LABEL, "FREQ: ");
-FLASH_STRING(RSSI_LABEL, "RSSI: ");
-FLASH_STRING(SNR_LABEL, "SNR: ");
-FLASH_STRING(FREQOFF_LABEL, "FREQOFF: ");
-
-FLASH_STRING(ORIGINATOR_LABEL, "Originator: ");
-FLASH_STRING(EVENT_LABEL, "Event: ");
-FLASH_STRING(LOCATIONS_LABEL, "Locations: ");
-FLASH_STRING(LOCATION_CODES_LABEL, "Location Codes: ");
-FLASH_STRING(DURATION_LABEL, "Duration: ");
-FLASH_STRING(DAY_LABEL, " Day: ");
-FLASH_STRING(TIME_LABEL, " Time: ");
-FLASH_STRING(CALLSIGN_LABEL, "Callsign: ");
-
-FLASH_STRING(VOLUME_LABEL, "Volume: ");
-FLASH_STRING(MUTE_ON_LABEL, "Mute: On\n");
-FLASH_STRING(MUTE_OFF_LABEL, "Mute: Off\n");
-FLASH_STRING(RADIO_ON_LABEL, "Radio: On\n");
-FLASH_STRING(RADIO_OFF_LABEL, "Radio: Off\n");
-FLASH_STRING(CHANNEL_UP_LABEL, "Channel Up\n");
-FLASH_STRING(CHANNEL_DOWN_LABEL, "Channel Down\n");
-
-FLASH_STRING(WAT_ON_LABEL, "WAT: On\n");
-FLASH_STRING(WAT_OFF_LABEL, "WAT: Off\n");
-
-FLASH_STRING(STARTING_SI4707_LABEL, "Starting up the Si4707.......\n\n");
-FLASH_STRING(DEFAULTS_SET_LABEL, "Defaults set.\n");
-FLASH_STRING(CONFIG_SAVED_LABEL, "Config saved.\n");
-FLASH_STRING(SCANNING_LABEL, "Scanning.....\n");
-FLASH_STRING(EOM_DETECTED, "EOM detected\n");
-FLASH_STRING(ERROR_OCCURRED_LABEL, "An error occured!\n\n");
-
-FLASH_STRING(VERSION_INFO_LABEL, "Version Information\n");
-FLASH_STRING(PART_NUMBER_LABEL, "PN: ");
-FLASH_STRING(PATCH_HIGH_LABEL, "PatchH: ");
-FLASH_STRING(PATCH_LOW_LABEL, "PatchL: ");
-FLASH_STRING(CHIP_REVISION_LABEL, "Chip Rev: ");
-FLASH_STRING(COMPONENT_MAJOR_LABEL, "CMP Major: ");
-FLASH_STRING(COMPONENT_MINOR_LABEL, "CMP Minor: ");
-FLASH_STRING(FIRMWARE_MAJOR_LABEL, "FW Major: ");
-FLASH_STRING(FIRMWARE_MINOR_LABEL, "FW Minor: ");
-
-FLASH_STRING(MENU, "Display this menu =\t 'h' or '?'\n"
-  "Channel down =\t\t 'd'\n"
-  "Channel up =\t\t 'u'\n"
-  "Scan =\t\t\t 's'\n"
-  "Volume + =\t\t '+'\n"
-  "Volume - =\t\t '-'\n"
-  "Mute / Unmute =\t\t 'm'\n"
-  "On / Off =\t\t 'o'\n"
-  "Save Settings = \t 'e'\n\n"
-);
-
-bool Logging::begin()
-{
+bool Logging::begin(void)  {
   // Setup Clock
   setSyncProvider(RTC.get);
   if (timeStatus() != timeSet)
     return false;
 
-  // Now using the good old Adafruit Data Logging Shield
-  if (!SD.begin(10))
-    return false;
-
-  logFile = SD.open("log.txt", FILE_WRITE);
-
-  if (!logFile)
-    return false;
-
   return true;
 }
 
-void Logging::end(void)
-{
-  logFile.close();
+void Logging::end(void) {
+
 }
+
 void Logging::logLeadingZero(int value) {
   if (value < 10) {
-    logFile << '0';
+    (*printer) << '0';
   }
 
-  logFile << value;
+  (*printer) << value;
 }
 
 void Logging::timestamp(void) {
-  logFile << endl << EVENT_LABEL;
+  (*printer) << endl << EVENT_LABEL;
   if (timeStatus() == timeSet) {
     logLeadingZero(month());
-    logFile << '-';
+    (*printer) << '-';
     logLeadingZero(day());
-    logFile << '-';
+    (*printer) << '-';
     logLeadingZero(year());
-    logFile << ' ';
+    (*printer) << ' ';
     logLeadingZero(hour());
-    logFile << ':';
+    (*printer) << ':';
     logLeadingZero(minute());
-    logFile << ':';
+    (*printer) << ':';
     logLeadingZero(second());
   }
   else {
-    logFile << '?';
+    (*printer) << '?';
   }
-
-  logFile << endl;
+  (*printer).flush();
 }
 
 void Logging::printRadioVersion(void)
@@ -133,86 +64,86 @@ void Logging::printRadioVersion(void)
   uint8_t cmpminor = response[7];
   uint8_t chiprev = response[8];
 
-  stdout << VERSION_INFO_LABEL
-  << PART_NUMBER_LABEL << pn << endl
-  << FIRMWARE_MAJOR_LABEL << fwmajor << endl
-  << FIRMWARE_MINOR_LABEL << fwminor << endl
-  << PATCH_HIGH_LABEL << patchH << endl
-  << PATCH_LOW_LABEL << patchL << endl
-  << COMPONENT_MAJOR_LABEL << cmpmajor << endl
-  << COMPONENT_MINOR_LABEL << cmpminor << endl
-  << CHIP_REVISION_LABEL << chiprev << endl << endl;
+  Serial << VERSION_INFO_LABEL
+  << PART_NUMBER_LABEL << pn << '\n'
+  << FIRMWARE_MAJOR_LABEL << fwmajor << '\n'
+  << FIRMWARE_MINOR_LABEL << fwminor << '\n'
+  << PATCH_HIGH_LABEL << patchH << '\n'
+  << PATCH_LOW_LABEL << patchL << '\n'
+  << COMPONENT_MAJOR_LABEL << cmpmajor << '\n'
+  << COMPONENT_MINOR_LABEL << cmpminor << '\n'
+  << CHIP_REVISION_LABEL << chiprev << "\n\n";
 }
 //
 //  Prints the Function Menu.
 //
 void Logging::showMenu(void)
 {
-  stdout << MENU;
+  Serial << MENU;
 }
 
 void Logging::printBooting(void)
 {
-  stdout << STARTING_SI4707_LABEL;
+  Serial << STARTING_SI4707_LABEL;
 }
 
 void Logging::printDefaultsSet(void)
 {
-  stdout << DEFAULTS_SET_LABEL;
+  Serial << DEFAULTS_SET_LABEL;
 }
 void Logging::printRadioOff(void)
 {
-  stdout << RADIO_OFF_LABEL;
+  Serial << RADIO_OFF_LABEL;
 }
 
 void Logging::printRadioOn(void)
 {
-  stdout << RADIO_ON_LABEL;
+  Serial << RADIO_ON_LABEL;
 }
 
 void Logging::printConfigSaved(void)
 {
-  stdout << CONFIG_SAVED_LABEL;
+  Serial << CONFIG_SAVED_LABEL;
 }
 
 void Logging::printFrequency(void)
 {
-  stdout << FREQ_LABEL << _FLOAT(frequency, 3) << endl;
+  Serial << FREQ_LABEL << _FLOAT(frequency, 3) << '\n';
 }
 
 void Logging::printRssi(void)
 {
-  stdout << RSSI_LABEL << rssi << endl;
+  Serial << RSSI_LABEL << rssi << '\n';
 }
 
 void Logging::printSnr(void)
 {
-  stdout << SNR_LABEL << snr << endl;
+  Serial << SNR_LABEL << snr << '\n';
 }
 
 void Logging::printFrequencyOffset(void)
 {
-  stdout << FREQOFF_LABEL << freqoff << endl;
+  Serial << FREQOFF_LABEL << freqoff << '\n';
 }
 
 void Logging::printEom(void)
 {
-  stdout << EOM_DETECTED;
+  Serial << EOM_DETECTED;
 }
 
 void Logging::printWatOn(void)
 {
-  stdout << WAT_ON_LABEL;
+  Serial << WAT_ON_LABEL;
 }
 
 void Logging::printWatOff(void)
 {
-  stdout << WAT_OFF_LABEL;
+  Serial << WAT_OFF_LABEL;
 }
 
 void Logging::printErrorOccurred(void)
 {
-  stdout << ERROR_OCCURRED_LABEL;
+  Serial << ERROR_OCCURRED_LABEL;
 }
 
 //
@@ -220,96 +151,96 @@ void Logging::printErrorOccurred(void)
 //
 void Logging::printHex(byte value)
 {
-  stdout << "0x" << _HEX(value) << ' ';
+  Serial << "0x" << _HEX(value) << ' ';
 }
 
 void Logging::printChannelDown(void)
 {
-  stdout << CHANNEL_DOWN_LABEL;
+  Serial << CHANNEL_DOWN_LABEL;
 }
 
 void Logging::printChannelUp(void)
 {
-  stdout << CHANNEL_UP_LABEL;
+  Serial << CHANNEL_UP_LABEL;
 }
 
 void Logging::printScanning(void)
 {
-  stdout << SCANNING_LABEL;
+  Serial << SCANNING_LABEL;
 }
 
 void Logging::printVolume(void)
 {
-  stdout << VOLUME_LABEL << volume << endl;
+  Serial << VOLUME_LABEL << volume << '\n';
 }
 
 void Logging::printMuteOff(void)
 {
-  stdout << MUTE_OFF_LABEL;
+  Serial << MUTE_OFF_LABEL;
 }
 
 void Logging::printMuteOn(void)
 {
-  stdout << MUTE_ON_LABEL;
+  Serial << MUTE_ON_LABEL;
 }
 
 void Logging::printSameMessage(void)
 {
-  stdout << ORIGINATOR_LABEL << sameOriginatorName << endl;
-  stdout << EVENT_LABEL << sameEventName << endl;
-  stdout << LOCATIONS_LABEL << sameLocations << endl;
+  Serial << ORIGINATOR_LABEL << sameOriginatorName << '\n';
+  Serial << EVENT_LABEL << sameEventName << '\n';
+  Serial << LOCATIONS_LABEL << sameLocations << '\n';
 
-  stdout << LOCATION_CODES_LABEL << endl;
+  Serial << LOCATION_CODES_LABEL << '\n';
 
   for (int i = 0; i < sameLocations; i++)
   {
-    stdout << sameLocationCodes[i] << endl;
+    Serial << sameLocationCodes[i] << '\n';
   }
 
-  stdout << DURATION_LABEL << sameDuration;
-  stdout << DAY_LABEL << sameDay;
-  stdout << TIME_LABEL << sameTime << endl;
-  stdout << CALLSIGN_LABEL << sameCallSign << endl;
+  Serial << DURATION_LABEL << sameDuration;
+  Serial << DAY_LABEL << sameDay;
+  Serial << TIME_LABEL << sameTime << '\n';
+  Serial << CALLSIGN_LABEL << sameCallSign << '\n';
 }
 
 
 void Logging::logFrequency(void)
 {
   timestamp();
-  logFile << FREQ_LABEL << _FLOAT(frequency, 3) << endl;
-  logFile.flush();
+  (*printer) << FREQ_LABEL << _FLOAT(frequency, 3) << '\n';
+  (*printer).flush();
 }
 
 void Logging::logEom(void)
 {
   timestamp();
-  logFile << EOM_DETECTED;
-  logFile.flush();
+  (*printer) << EOM_DETECTED;
+  (*printer).flush();
 }
 
 void Logging::logErrorOccurred(void)
 {
   timestamp();
-  logFile << ERROR_OCCURRED_LABEL;
-  logFile.flush();
+  (*printer) << ERROR_OCCURRED_LABEL;
+  (*printer).flush();
 }
 
 void Logging::logSameMessage(void) {
   timestamp();
-  logFile << ORIGINATOR_LABEL << sameOriginatorName << endl;
-  logFile << EVENT_LABEL << sameEventName << endl;
-  logFile << LOCATIONS_LABEL << sameLocations << endl;
+  (*printer) << ORIGINATOR_LABEL << sameOriginatorName << '\n';
+  (*printer) << EVENT_LABEL << sameEventName << '\n';
+  (*printer) << LOCATIONS_LABEL << sameLocations << '\n';
 
-  logFile << LOCATION_CODES_LABEL << endl;
+  (*printer) << LOCATION_CODES_LABEL << '\n';
 
   for (int i = 0; i < sameLocations; i++)
   {
-    logFile << sameLocationCodes[i] << endl;
+    (*printer) << sameLocationCodes[i] << '\n';
   }
 
-  logFile << DURATION_LABEL << sameDuration;
-  logFile << DAY_LABEL << sameDay;
-  logFile << TIME_LABEL << sameTime << endl;
-  logFile << CALLSIGN_LABEL << sameCallSign << endl;
-  logFile.flush();
+  (*printer) << DURATION_LABEL << sameDuration;
+  (*printer) << DAY_LABEL << sameDay;
+  (*printer) << TIME_LABEL << sameTime << '\n';
+  (*printer) << CALLSIGN_LABEL << sameCallSign << '\n';
+  (*printer).flush();
 }

@@ -42,8 +42,6 @@ void Settings::setDefaults()
 {
   strcpy_P(version, CONFIG_VERSION);
 
-  channel = 65020; //162.550 MHz 162550 / 2.5
-  // 0x003F 63
-  // 0x002D 45 75% of 63
-  volume = 0x002D;
+  channel = DEFAULT_CHANNEL;
+  volume = DEFAULT_VOLUME;
 }
