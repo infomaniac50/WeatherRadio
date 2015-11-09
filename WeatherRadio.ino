@@ -24,20 +24,43 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Ethernet.h>
-#include <Streaming.h>
 
 #include "Settings.h"
-
 #include "Logging.h"
-#include "LoggingSD.h"
+#include "Message.h"
 
 #define ERROR_PIN 7
 #define STATUS_PIN 8
+#define SD_PIN 10
 
 byte intStatusCopy;
 
 Settings settings;
-LoggingSD logging;
+Logging logging;
+File logFile;
+PrintEx serial = Serial;
+
+bool log_begin()
+{
+  if (!logging.begin())
+    return false;
+
+  // Now using the good old Adafruit Data Logging Shield
+  if (!SD.begin(SD_PIN))
+    return false;
+  logFile = SD.open("log.txt", FILE_WRITE);
+
+  if (!logFile)
+    return false;
+  return true;
+}
+
+void log_end(void)
+{
+  logging.end();
+  logFile.flush();
+  logFile.close();
+}
 
 void setup()
 {
@@ -58,10 +81,10 @@ void setup()
   // SS is defined in the pins_arduino.h file
   pinMode(SS, OUTPUT);
 
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   // Setup Other Stuff
-  if (!logging.begin()) {
+  if (!log_begin()) {
     errorLoop();
   }
 
@@ -69,19 +92,18 @@ void setup()
   if (!settings.checkVersion())
   {
     settings.setDefaults();
-    logging.printDefaultsSet();
+    serial.printf("%p\n", DEFAULTS_SET_LABEL);
   }
 
-  logging.printBooting();
+  serial.printf("%p\n", STARTING_SI4707_LABEL);
 
   delay(100);
 
   // Setup Radio
   Radio.begin(22);
 
-
   togglePower();
-  logging.showMenu();
+  serial.printf("%p\n", MENU);
 }
 
 void loop()
@@ -105,10 +127,10 @@ void loop()
     if (intStatusCopy & STCINT)
     {
       Radio.getTuneStatus(INTACK);  //  Using INTACK clears STCINT, CHECK preserves it.
-      logging.printFrequency();
-      logging.printRssi();
-      logging.printSnr();
-      logging.logFrequency();
+      logging.printFrequencyTo(Serial);
+      logging.printRssiTo(Serial);
+      logging.printSnrTo(Serial);
+      logging.printFrequencyTo(logFile);
       Radio.sameFlush();             //  This should be done after any tune function.
       //intStatusCopy |= RSQINT;         //  We can force it to get rsqStatus on any tune.
     }
@@ -116,9 +138,9 @@ void loop()
     if (intStatusCopy & RSQINT)
     {
       Radio.getRsqStatus(INTACK);
-      logging.printRssi();
-      logging.printSnr();
-      logging.printFrequencyOffset();
+      logging.printRssiTo(Serial);
+      logging.printSnrTo(Serial);
+      logging.printFrequencyOffsetTo(Serial);
     }
 
     if (intStatusCopy & SAMEINT)
@@ -128,8 +150,8 @@ void loop()
       if (sameStatus & EOMDET)
       {
         Radio.sameFlush();
-        logging.printEom();
-        logging.logEom();
+        logging.printEomTo(Serial);
+        logging.printEomTo(logFile);
         //  More application specific code could go here. (Mute audio, turn something on/off, etc.)
         return;
       }
@@ -140,8 +162,8 @@ void loop()
       if (msgStatus & MSGPAR)
       {
         msgStatus &= ~MSGPAR;                         // Clear the parse status, so that we don't logging.print it again.
-        logging.printSameMessage();
-        logging.logSameMessage();
+        logging.printSameMessageTo(Serial);
+        logging.printSameMessageTo(logFile);
       }
 
       if (msgStatus & MSGPUR)  //  Signals that the third header has been received.
@@ -158,13 +180,13 @@ void loop()
       if (asqStatus == 0x01)
       {
         Radio.sameFlush();
-        logging.printWatOn();
+        serial.printf("%p\n", WAT_ON_LABEL);
         //  More application specific code could go here.  (Unmute audio, turn something on/off, etc.)
       }
 
       if (asqStatus == 0x02)
       {
-        logging.printWatOff();
+        serial.printf("%p\n", WAT_OFF_LABEL);
         //  More application specific code could go here.  (Mute audio, turn something on/off, etc.)
       }
 
@@ -174,8 +196,8 @@ void loop()
     if (intStatusCopy & ERRINT)
     {
       intStatusCopy &= ~ERRINT;
-      logging.printErrorOccurred();
-      logging.logErrorOccurred();
+      serial.printf("%p\n", ERROR_OCCURRED_LABEL);
+      logFile.println(ERROR_OCCURRED_LABEL);
     }
   }
 
@@ -194,47 +216,47 @@ inline void getFunction()
 
   switch (function)
   {
-  case 'h':
-  case '?':
-    logging.showMenu();
-    break;
+    case 'h':
+    case '?':
+      serial.printf("%p\n", MENU);
+      break;
 
-  case 'd':
-    if (tuneDown()) logging.printChannelDown();
-    break;
+    case 'd':
+      if (tuneDown()) serial.printf("%p\n", CHANNEL_DOWN_LABEL);
+      break;
 
-  case 'u':
-    if (tuneUp()) logging.printChannelUp();
-    break;
+    case 'u':
+      if (tuneUp()) serial.printf("%p\n", CHANNEL_UP_LABEL);
+      break;
 
-  case 's':
-    logging.printScanning();
-    Radio.scan();
-    break;
+    case 's':
+      serial.printf("%p\n", SCANNING_LABEL);
+      Radio.scan();
+      break;
 
-  case '-':
-    if (volumeDown()) logging.printVolume();
-    break;
+    case '-':
+      if (volumeDown()) logging.printVolumeTo(Serial);
+      break;
 
-  case '+':
-    if (volumeUp()) logging.printVolume();
-    break;
+    case '+':
+      if (volumeUp()) logging.printVolumeTo(Serial);
+      break;
 
-  case 'm':
-    toggleMute();
-    break;
+    case 'm':
+      toggleMute();
+      break;
 
-  case 'o':
-    togglePower();
-    break;
+    case 'o':
+      togglePower();
+      break;
 
-  case 'e':
-    settings.saveConfig();
-    logging.printConfigSaved();
-    break;
-  default:
-    blink(ERROR_PIN, 25);
-    break;
+    case 'e':
+      settings.saveConfig();
+      serial.printf("%p\n", CONFIG_SAVED_LABEL);
+      break;
+    default:
+      blink(ERROR_PIN, 25);
+      break;
   }
 
   blink(STATUS_PIN, 25);
@@ -266,12 +288,12 @@ inline void toggleMute(void) {
   if (mute)
   {
     Radio.setMute(OFF);
-    logging.printMuteOff();
+    serial.printf("%p\n", MUTE_OFF_LABEL);
   }
   else
   {
     Radio.setMute(ON);
-    logging.printMuteOn();
+    serial.printf("%p\n", MUTE_ON_LABEL);
   }
 }
 
@@ -279,7 +301,7 @@ inline void togglePower(void) {
   if (power)
   {
     Radio.off();
-    logging.printRadioOff();
+    serial.printf("%p\n", RADIO_OFF_LABEL);
     logging.end();
   }
   else
@@ -287,7 +309,7 @@ inline void togglePower(void) {
     logging.begin();
     Radio.patch();          //  Use this one to to include the 1050 Hz patch.
     //Radio.on();           //  Use this one if not using the patch.
-    logging.printRadioVersion();
+    logging.printRadioVersionTo(Serial);
     //
     //  All useful interrupts are enabled here.
     //
@@ -319,7 +341,7 @@ inline void togglePower(void) {
     Radio.setVolume(volume);
     Radio.tune();  //  6 digits only.
 
-    logging.printRadioOn();
+    serial.printf("%p\n", RADIO_ON_LABEL);
   }
 }
 

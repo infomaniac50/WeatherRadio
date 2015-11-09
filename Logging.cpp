@@ -1,57 +1,25 @@
 #include <Arduino.h>
 
-#include <Streaming.h>
-
 #include <Wire.h>
 #include <Time.h>
 #include <DS1307RTC.h>
 #include <SI4707.h>
 
 #include "Logging.h"
+#include "Message.h"
+
 
 bool Logging::begin(void)  {
   // Setup Clock
   setSyncProvider(RTC.get);
-  if (timeStatus() != timeSet)
-    return false;
-
-  return true;
+  return (timeStatus() == timeSet);
 }
 
 void Logging::end(void) {
 
 }
 
-void Logging::logLeadingZero(int value) {
-  if (value < 10) {
-    (*printer) << '0';
-  }
-
-  (*printer) << value;
-}
-
-void Logging::timestamp(void) {
-  (*printer) << endl << EVENT_LABEL;
-  if (timeStatus() == timeSet) {
-    logLeadingZero(month());
-    (*printer) << '-';
-    logLeadingZero(day());
-    (*printer) << '-';
-    logLeadingZero(year());
-    (*printer) << ' ';
-    logLeadingZero(hour());
-    (*printer) << ':';
-    logLeadingZero(minute());
-    (*printer) << ':';
-    logLeadingZero(second());
-  }
-  else {
-    (*printer) << '?';
-  }
-  (*printer).flush();
-}
-
-void Logging::printRadioVersion(void)
+void Logging::printRadioVersionTo(StreamEx printer)
 {
   Radio.getRevision();  //  Only captured on the logic analyzer - not displayed.
   // The hell it ain't :p
@@ -64,183 +32,125 @@ void Logging::printRadioVersion(void)
   uint8_t cmpminor = response[7];
   uint8_t chiprev = response[8];
 
-  Serial << VERSION_INFO_LABEL
-  << PART_NUMBER_LABEL << pn << '\n'
-  << FIRMWARE_MAJOR_LABEL << fwmajor << '\n'
-  << FIRMWARE_MINOR_LABEL << fwminor << '\n'
-  << PATCH_HIGH_LABEL << patchH << '\n'
-  << PATCH_LOW_LABEL << patchL << '\n'
-  << COMPONENT_MAJOR_LABEL << cmpmajor << '\n'
-  << COMPONENT_MINOR_LABEL << cmpminor << '\n'
-  << CHIP_REVISION_LABEL << chiprev << "\n\n";
+  printer.printf("%p\n", VERSION_INFO_LABEL);
+  printer.printf("%p%d\n", PART_NUMBER_LABEL, pn);
+  printer.printf("%p%d\n", FIRMWARE_MAJOR_LABEL, fwmajor);
+  printer.printf("%p%d\n", FIRMWARE_MINOR_LABEL, fwminor);
+  printer.printf("%p%d\n", PATCH_HIGH_LABEL, patchH);
+  printer.printf("%p%d\n", PATCH_LOW_LABEL, patchL);
+  printer.printf("%p%d\n", COMPONENT_MAJOR_LABEL, cmpmajor);
+  printer.printf("%p%d\n", COMPONENT_MINOR_LABEL, cmpminor);
+  printer.printf("%p%d\n", CHIP_REVISION_LABEL, chiprev);
 }
 //
 //  Prints the Function Menu.
 //
-void Logging::showMenu(void)
-{
-  Serial << MENU;
-}
-
-void Logging::printBooting(void)
-{
-  Serial << STARTING_SI4707_LABEL;
-}
-
-void Logging::printDefaultsSet(void)
-{
-  Serial << DEFAULTS_SET_LABEL;
-}
-void Logging::printRadioOff(void)
-{
-  Serial << RADIO_OFF_LABEL;
-}
-
-void Logging::printRadioOn(void)
-{
-  Serial << RADIO_ON_LABEL;
-}
-
-void Logging::printConfigSaved(void)
-{
-  Serial << CONFIG_SAVED_LABEL;
-}
-
-void Logging::printFrequency(void)
-{
-  Serial << FREQ_LABEL << _FLOAT(frequency, 3) << '\n';
-}
-
-void Logging::printRssi(void)
-{
-  Serial << RSSI_LABEL << rssi << '\n';
-}
-
-void Logging::printSnr(void)
-{
-  Serial << SNR_LABEL << snr << '\n';
-}
-
-void Logging::printFrequencyOffset(void)
-{
-  Serial << FREQOFF_LABEL << freqoff << '\n';
-}
-
-void Logging::printEom(void)
-{
-  Serial << EOM_DETECTED;
-}
-
-void Logging::printWatOn(void)
-{
-  Serial << WAT_ON_LABEL;
-}
-
-void Logging::printWatOff(void)
-{
-  Serial << WAT_OFF_LABEL;
-}
-
-void Logging::printErrorOccurred(void)
-{
-  Serial << ERROR_OCCURRED_LABEL;
-}
 
 //
-//  Simple Hex print utility - Prints a Byte with a leading zero and trailing space.
+//  Global Radio Variables.
 //
-void Logging::printHex(byte value)
+// uint16_t channel = WB_MIN_FREQUENCY;
+// float frequency;
+// uint16_t volume = RADIO_VOLUME;
+// uint8_t mute = OFF;
+// uint8_t rssi;
+// uint8_t snr;
+// int freqoff;
+// uint8_t power = OFF;
+// //
+// //  Global SAME Variables.
+// //
+// char sameOriginatorName[4];
+// char sameEventName[4];
+// char sameCallSign[9];
+// //
+// uint8_t sameHeaderCount;
+// uint8_t sameState;
+// uint8_t sameLength;
+// uint8_t samePlusIndex;
+// uint8_t sameLocations;
+// uint32_t sameLocationCodes[SAME_LOCATION_CODES];
+// uint16_t sameDuration;
+// uint16_t sameDay;
+// uint16_t sameTime;
+// uint8_t sameWat = 0x02;
+// uint8_t response[15];
+void Logging::printSameMessageTo(StreamEx printer)
 {
-  Serial << "0x" << _HEX(value) << ' ';
-}
+  timestampTo(printer);
 
-void Logging::printChannelDown(void)
-{
-  Serial << CHANNEL_DOWN_LABEL;
-}
+  char _sameOriginatorName[4];
+  char _sameEventName[4];
+  char _sameCallSign[9];
 
-void Logging::printChannelUp(void)
-{
-  Serial << CHANNEL_UP_LABEL;
-}
+  strcpy(_sameOriginatorName, sameOriginatorName);
+  strcpy(_sameEventName, sameEventName);
+  strcpy(_sameCallSign, sameCallSign);
 
-void Logging::printScanning(void)
-{
-  Serial << SCANNING_LABEL;
-}
-
-void Logging::printVolume(void)
-{
-  Serial << VOLUME_LABEL << volume << '\n';
-}
-
-void Logging::printMuteOff(void)
-{
-  Serial << MUTE_OFF_LABEL;
-}
-
-void Logging::printMuteOn(void)
-{
-  Serial << MUTE_ON_LABEL;
-}
-
-void Logging::printSameMessage(void)
-{
-  Serial << ORIGINATOR_LABEL << sameOriginatorName << '\n';
-  Serial << EVENT_LABEL << sameEventName << '\n';
-  Serial << LOCATIONS_LABEL << sameLocations << '\n';
-
-  Serial << LOCATION_CODES_LABEL << '\n';
+  printer.printf("%p%s\n%p%s\n%p%s\n%p\n",
+    ORIGINATOR_LABEL, _sameOriginatorName,
+    EVENT_LABEL, _sameEventName,
+    LOCATIONS_LABEL, _sameCallSign,
+    LOCATION_CODES_LABEL
+  );
 
   for (int i = 0; i < sameLocations; i++)
   {
-    Serial << sameLocationCodes[i] << '\n';
+    printer.printf("%d\n", sameLocationCodes[i]);
   }
 
-  Serial << DURATION_LABEL << sameDuration;
-  Serial << DAY_LABEL << sameDay;
-  Serial << TIME_LABEL << sameTime << '\n';
-  Serial << CALLSIGN_LABEL << sameCallSign << '\n';
+  printer.printf("%p%d %p%d %p%d\n%p%s\n",
+    DURATION_LABEL, sameDuration,
+    DAY_LABEL, sameDay,
+    TIME_LABEL, sameTime,
+    CALLSIGN_LABEL, _sameCallSign
+  );
 }
 
-
-void Logging::logFrequency(void)
+void Logging::printRssiTo(StreamEx printer)
 {
-  timestamp();
-  (*printer) << FREQ_LABEL << _FLOAT(frequency, 3) << '\n';
-  (*printer).flush();
+  printer.printf("%p%d\n", RSSI_LABEL, rssi);
 }
 
-void Logging::logEom(void)
+void Logging::printSnrTo(StreamEx printer)
 {
-  timestamp();
-  (*printer) << EOM_DETECTED;
-  (*printer).flush();
+  printer.printf("%p%d\n", SNR_LABEL, snr);
 }
 
-void Logging::logErrorOccurred(void)
+void Logging::printFrequencyOffsetTo(StreamEx printer)
 {
-  timestamp();
-  (*printer) << ERROR_OCCURRED_LABEL;
-  (*printer).flush();
+  printer.printf("%p%d\n", FREQOFF_LABEL, freqoff);
 }
 
-void Logging::logSameMessage(void) {
-  timestamp();
-  (*printer) << ORIGINATOR_LABEL << sameOriginatorName << '\n';
-  (*printer) << EVENT_LABEL << sameEventName << '\n';
-  (*printer) << LOCATIONS_LABEL << sameLocations << '\n';
+void Logging::printVolumeTo(StreamEx printer)
+{
+  printer.printf("%p%d\n", VOLUME_LABEL, volume);
+}
 
-  (*printer) << LOCATION_CODES_LABEL << '\n';
+void Logging::printFrequencyTo(StreamEx printer)
+{
+  timestampTo(printer);
 
-  for (int i = 0; i < sameLocations; i++)
-  {
-    (*printer) << sameLocationCodes[i] << '\n';
+  printer.printf("%p%0.3f\n", FREQ_LABEL, frequency);
+}
+
+void Logging::printEomTo(StreamEx printer)
+{
+  timestampTo(printer);
+  printer.printf("%p\n", EOM_DETECTED);
+}
+
+void Logging::printErrorOccurredTo(StreamEx printer)
+{
+  timestampTo(printer);
+  printer.printf("%p\n", ERROR_OCCURRED_LABEL);
+}
+
+void Logging::timestampTo(StreamEx printer) {
+  if (timeStatus() == timeSet) {
+    printer.printf("%p %02d-%02d-%04d %02d:%02d:%02d\n", EVENT_LABEL, month(), day(), year(), hour(), minute(), second());
   }
-
-  (*printer) << DURATION_LABEL << sameDuration;
-  (*printer) << DAY_LABEL << sameDay;
-  (*printer) << TIME_LABEL << sameTime << '\n';
-  (*printer) << CALLSIGN_LABEL << sameCallSign << '\n';
-  (*printer).flush();
+  else {
+    printer.printf("%p %02d-%02d-%04d %02d:%02d:%02d\n", EVENT_LABEL, 0, 0, 0, 0, 0, 0);
+  }
 }
